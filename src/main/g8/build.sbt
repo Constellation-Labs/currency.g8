@@ -6,8 +6,8 @@ ThisBuild / scalaVersion := "2.13.10"
 
 lazy val root = (project in file(".")).
   settings(
-    name := "$name$"
-  ).aggregate(currencyL0)
+    name := "$name;format="lower,hyphen"$"
+  ).aggregate(currencyL0, currencyL1)
 
 lazy val currencyL1 = (project in file("modules/l1"))
   .enablePlugins(AshScriptPlugin)
