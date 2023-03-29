@@ -6,7 +6,7 @@ object Dependencies {
     val tessellation = "$tessellation_version$"
     val decline = "2.4.1"
   }
-  def tessellation(artifact: String): ModuleID = "org.constellation" %% s"tessellation-\$artifact" % V.tessellation % Provided
+  def tessellation(artifact: String): ModuleID = "org.constellation" %% s"tessellation-\$artifact" % V.tessellation
 
   def decline(artifact: String = ""): ModuleID =
     "com.monovore" %% {
