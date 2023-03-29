@@ -9,12 +9,12 @@ import cats.syntax.semigroupk._
 
 import scala.concurrent.duration._
 
+import org.tessellation.BuildInfo
 import org.tessellation.currency.l1.cli.method
 import org.tessellation.currency.l1.cli.method.{Run, RunInitialValidator, RunValidator}
 import org.tessellation.currency.l1.domain.snapshot.programs.CurrencySnapshotProcessor
 import org.tessellation.currency.l1.modules.{Programs, Storages}
-import org.tessellation.currency.schema.currency.{CurrencyBlock, CurrencySnapshot, CurrencyTransaction}
-import org.tessellation.currency.{CurrencyKryoRegistrationIdRange, currencyKryoRegistrar}
+import org.tessellation.currency.schema.currency._
 import org.tessellation.dag.l1.http.p2p.P2PClient
 import org.tessellation.dag.l1.infrastructure.block.rumor.handler.blockRumorHandler
 import org.tessellation.dag.l1.modules._
@@ -36,19 +36,19 @@ import eu.timepit.refined.boolean.Or
 import fs2.Stream
 
 object Main
-  extends TessellationIOApp[Run](
-    "$name;format=" lower,hyphen"$-l1",
-    "$name$ L1 node",
-    ClusterId(UUID.fromString("517c3a05-9219-471b-a54c-21b7d72f4ae5")),
-    version = BuildInfo.version
-  ) {
+    extends TessellationIOApp[Run](
+      "$name;format="lower,hyphen"$-l1",
+      "$name$ L1 node",
+      ClusterId(UUID.fromString("517c3a05-9219-471b-a54c-21b7d72f4ae5")),
+      version = BuildInfo.version
+    ) {
 
   val opts: Opts[Run] = method.opts
 
-  type KryoRegistrationIdRange = CurrencyKryoRegistrationIdRange Or SdkOrSharedOrKernelRegistrationIdRange Or DagL1KryoRegistrationIdRange
+  type KryoRegistrationIdRange = SdkOrSharedOrKernelRegistrationIdRange Or DagL1KryoRegistrationIdRange
 
   val kryoRegistrar: Map[Class[_], KryoRegistrationId[KryoRegistrationIdRange]] =
-    currencyKryoRegistrar.union(sdkKryoRegistrar).union(dagL1KryoRegistrar)
+    sdkKryoRegistrar.union(dagL1KryoRegistrar)
 
   def run(method: Run, sdk: SDK[IO]): Resource[IO, Unit] = {
     import sdk._
@@ -58,12 +58,24 @@ object Main
     for {
       queues <- Queues.make[IO, CurrencyTransaction, CurrencyBlock](sdkQueues).asResource
       storages <- Storages
-        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](sdkStorages, method.l0Peer, method.globalL0Peer)
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
+          sdkStorages,
+          method.l0Peer,
+          method.globalL0Peer
+        )
         .asResource
-      validators = Validators.make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](storages, seedlist)
-      p2pClient = P2PClient.make[IO, CurrencyTransaction, CurrencyBlock](sdkP2PClient, sdkResources.client, currencyPathPrefix = "currency")
+      validators = Validators
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
+          storages,
+          seedlist
+        )
+      p2pClient = P2PClient.make[IO, CurrencyTransaction, CurrencyBlock](
+        sdkP2PClient,
+        sdkResources.client,
+        currencyPathPrefix = "currency"
+      )
       services = Services
-        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
           storages,
           storages.lastGlobalSnapshot,
           storages.globalL0Cluster,
@@ -78,11 +90,19 @@ object Main
         storages.block,
         storages.lastGlobalSnapshot,
         storages.lastSnapshot,
-        storages.transaction
+        storages.transaction,
+        sdkServices.globalSnapshotContextFns,
+        sdkServices.currencySnapshotContextFns
       )
-      programs = Programs.make(sdkPrograms, p2pClient, storages, snapshotProcessor)
+      programs = Programs
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
+          sdkPrograms,
+          p2pClient,
+          storages,
+          snapshotProcessor
+        )
       healthChecks <- HealthChecks
-        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
           storages,
           services,
           programs,
@@ -102,7 +122,7 @@ object Main
         .asResource
 
       api = HttpApi
-        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
           storages,
           queues,
           keyPair.getPrivate,
@@ -118,7 +138,7 @@ object Main
       _ <- MkHttpServer[IO].newEmber(ServerName("cli"), cfg.http.cliHttp, api.cliApp)
 
       stateChannel <- StateChannel
-        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshot](
+        .make[IO, CurrencyTransaction, CurrencyBlock, CurrencySnapshotStateProof, CurrencyIncrementalSnapshot, CurrencySnapshotInfo](
           cfg,
           keyPair,
           p2pClient,
