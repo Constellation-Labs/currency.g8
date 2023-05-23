@@ -6,3 +6,6 @@ project/plugins/project/
 .idea/
 .bsp/
 .bloop/
+metals.sbt
+.metals/
+.vscode/
