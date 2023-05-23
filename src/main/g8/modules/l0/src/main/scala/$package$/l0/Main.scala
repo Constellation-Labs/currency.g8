@@ -1,11 +1,15 @@
 package $package$.l0
 
+import java.util.UUID
+
 import cats.effect.{IO, Resource}
 import cats.syntax.semigroupk._
-import com.monovore.decline.Opts
+import cats.syntax.traverse._
+
 import org.tessellation.BuildInfo
+import org.tessellation.currency._
 import org.tessellation.currency.l0.cli.method
-import org.tessellation.currency.l0.cli.method.{Run, RunGenesis, RunRollback, RunValidator}
+import org.tessellation.currency.l0.cli.method._
 import org.tessellation.currency.l0.http.P2PClient
 import org.tessellation.currency.l0.modules._
 import org.tessellation.ext.cats.effect.ResourceIO
@@ -18,7 +22,7 @@ import org.tessellation.sdk.resources.MkHttpServer
 import org.tessellation.sdk.resources.MkHttpServer.ServerName
 import org.tessellation.sdk.{SdkOrSharedOrKernelRegistrationIdRange, sdkKryoRegistrar}
 
-import java.util.UUID
+import com.monovore.decline.Opts
 
 object Main
     extends TessellationIOApp[Run](
@@ -35,6 +39,8 @@ object Main
   val kryoRegistrar: Map[Class[_], KryoRegistrationId[KryoRegistrationIdRange]] =
     sdkKryoRegistrar
 
+  val dataApplication: Option[BaseDataApplicationL0Service[IO]] = None
+
   def run(method: Run, sdk: SDK[IO]): Resource[IO, Unit] = {
     import sdk._
 
@@ -42,26 +48,35 @@ object Main
 
     for {
       _ <- Resource.unit
-      p2pClient = P2PClient.make[IO](sdkP2PClient, sdkResources.client, keyPair, method.identifier)
       queues <- Queues.make[IO](sdkQueues).asResource
       storages <- Storages.make[IO](sdkStorages, cfg.snapshot, method.globalL0Peer).asResource
+      p2pClient = P2PClient.make[IO](sdkP2PClient, sdkResources.client, sdkServices.session)
       validators = Validators.make[IO](seedlist)
       services <- Services
         .make[IO](
           p2pClient,
           sdkServices,
           storages,
-          validators,
           sdkResources.client,
           sdkServices.session,
           sdk.seedlist,
           sdk.nodeId,
           keyPair,
           cfg,
-          method.identifier
+          dataApplication
         )
         .asResource
-      programs = Programs.make[IO](keyPair, sdk.nodeId, method.identifier, cfg.globalL0Peer, sdkPrograms, storages, services, p2pClient)
+      programs = Programs.make[IO](
+        keyPair,
+        sdk.nodeId,
+        method.identifier,
+        cfg.globalL0Peer,
+        sdkPrograms,
+        storages,
+        services,
+        p2pClient,
+        services.snapshotContextFunctions
+      )
       healthChecks <- HealthChecks
         .make[IO](
           storages,
@@ -77,7 +92,7 @@ object Main
       rumorHandler = RumorHandlers.make[IO](storages.cluster, healthChecks.ping, services.localHealthcheck).handlers <+>
         services.consensus.handler
       _ <- Daemons
-        .start(storages, services, programs, queues, healthChecks)
+        .start(storages, services, programs, queues, healthChecks, dataApplication)
         .asResource
       api = HttpApi
         .make[IO](
@@ -112,16 +127,18 @@ object Main
 
       _ <- (method match {
         case _: RunValidator =>
-          gossipDaemon.startAsRegularValidator >>
+          storages.identifierStorage.setInitial(method.identifier) >>
+            gossipDaemon.startAsRegularValidator >>
             programs.globalL0PeerDiscovery.discoverFrom(cfg.globalL0Peer) >>
             storages.node.tryModifyState(NodeState.Initial, NodeState.ReadyToJoin)
 
         case _: RunRollback =>
-          storages.node.tryModifyState(
-            NodeState.Initial,
-            NodeState.RollbackInProgress,
-            NodeState.RollbackDone
-          )(programs.rollback.rollback) >> gossipDaemon.startAsInitialValidator >>
+          storages.identifierStorage.setInitial(method.identifier) >>
+            storages.node.tryModifyState(
+              NodeState.Initial,
+              NodeState.RollbackInProgress,
+              NodeState.RollbackDone
+            )(programs.rollback.rollback) >> gossipDaemon.startAsInitialValidator >>
             services.cluster.createSession >>
             services.session.createSession >>
             programs.globalL0PeerDiscovery.discoverFrom(cfg.globalL0Peer) >>
@@ -132,7 +149,11 @@ object Main
             NodeState.Initial,
             NodeState.LoadingGenesis,
             NodeState.GenesisReady
-          )(programs.genesis.accept(m.genesisPath)) >> gossipDaemon.startAsInitialValidator >>
+          ) {
+            dataApplication.traverse { da =>
+              da.serializeState(da.genesis)
+            }.flatMap(programs.genesis.accept(m.genesisPath, m.genesisCurrencySnapshotSalt, _))
+          } >> gossipDaemon.startAsInitialValidator >>
             services.cluster.createSession >>
             services.session.createSession >>
             programs.globalL0PeerDiscovery.discoverFrom(cfg.globalL0Peer) >>
