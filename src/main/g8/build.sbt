@@ -17,7 +17,7 @@ ThisBuild / assemblyMergeStrategy := {
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
-  ).aggregate(currencyL0, currencyL1)
+  ).aggregate(currencyL0, currencyL1 $if(include_data_l1.truthy)$, dataL1$endif$)
 
 lazy val currencyL1 = (project in file("modules/l1"))
   .enablePlugins(AshScriptPlugin)
@@ -67,3 +67,27 @@ lazy val currencyL0 = (project in file("modules/l0"))
       Libraries.tessellationCurrencyL0
     )
   )
+
+$if(include_data_l1.truthy)$
+lazy val dataL1 = (project in file("modules/data-l1"))
+  .enablePlugins(AshScriptPlugin)
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(JavaAppPackaging)
+  .settings(
+    name := "$name;format="lower,hyphen"$-data-l1",
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "$package$.data-l1",
+    resolvers += Resolver.mavenLocal,
+    resolvers += Resolver.githubPackages("abankowski", "http-request-signer"),
+    Defaults.itSettings,
+    libraryDependencies ++= Seq(
+      CompilerPlugin.kindProjector,
+      CompilerPlugin.betterMonadicFor,
+      CompilerPlugin.semanticDB,
+      Libraries.tessellationDAGL1,
+      Libraries.tessellationSDK,
+      Libraries.tessellationShared,
+      Libraries.tessellationCurrencyL1
+    )
+  )
+$endif$
