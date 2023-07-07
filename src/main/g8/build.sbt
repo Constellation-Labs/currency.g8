@@ -14,6 +14,13 @@ ThisBuild / assemblyMergeStrategy := {
     oldStrategy(x)
 }
 
+assembly / assemblyMergeStrategy := {
+  case "module-info.class" => MergeStrategy.discard
+  case x =>
+    val oldStrategy = (assembly / assemblyMergeStrategy).value
+    oldStrategy(x)
+}
+
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
@@ -76,6 +83,8 @@ lazy val currencyL0 = (project in file("modules/l0"))
   .settings(
     name := "$name;format="lower,hyphen"$-currency-l0",
     scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+    buildInfoPackage := "$package$.l0",
     resolvers += Resolver.mavenLocal,
     resolvers += Resolver.githubPackages("abankowski", "http-request-signer"),
     Defaults.itSettings,
