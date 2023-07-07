@@ -17,18 +17,18 @@ ThisBuild / assemblyMergeStrategy := {
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
-  ).aggregate($if(include_data_l1.truthy)$shared, $endif$currencyL0, currencyL1$if(include_data_l1.truthy)$, dataL1$endif$)
+  ).aggregate($if(include_data_l1.truthy)$sharedData, $endif$currencyL0, currencyL1$if(include_data_l1.truthy)$, dataL1$endif$)
 
 $if(include_data_l1.truthy)$
-lazy val shared = (project in file("modules/shared"))
+lazy val sharedData = (project in file("modules/shared_data"))
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
   .settings(
-    name := "$name;format="lower,hyphen"$-shared",
+    name := "$name;format="lower,hyphen"$-shared_data",
     scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "$package$.shared",
+    buildInfoPackage := "$package$.shared_data",
     resolvers += Resolver.mavenLocal,
     resolvers += Resolver.githubPackages("abankowski", "http-request-signer"),
     Defaults.itSettings,
@@ -71,7 +71,7 @@ lazy val currencyL0 = (project in file("modules/l0"))
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
   $if(include_data_l1.truthy)$
-  .dependsOn(shared)
+  .dependsOn(sharedData)
   $endif$
   .settings(
     name := "$name;format="lower,hyphen"$-currency-l0",
@@ -102,7 +102,7 @@ lazy val dataL1 = (project in file("modules/data_l1"))
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
-  .dependsOn(shared)
+  .dependsOn(sharedData)
   .settings(
     name := "$name;format="lower,hyphen"$-data_l1",
     scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
