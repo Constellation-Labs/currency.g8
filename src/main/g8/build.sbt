@@ -17,7 +17,7 @@ ThisBuild / assemblyMergeStrategy := {
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
-  ).aggregate(currencyL0, currencyL1 $if(include_data_l1.truthy)$, shared, dataL1$endif$)
+  ).aggregate($if(include_data_l1.truthy)$shared, $endif$currencyL0, currencyL1$if(include_data_l1.truthy)$,dataL1$endif$)
 
 $if(include_data_l1.truthy)$
 lazy val shared = (project in file("modules/shared"))
@@ -26,7 +26,7 @@ lazy val shared = (project in file("modules/shared"))
   .enablePlugins(JavaAppPackaging)
   .settings(
     name := "$name;format="lower,hyphen"$-shared",
-    scalacOptions ++= List("-Ymacro-annotations"),
+    scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "$package$.shared",
     resolvers += Resolver.mavenLocal,
@@ -49,7 +49,7 @@ lazy val currencyL1 = (project in file("modules/l1"))
   .enablePlugins(JavaAppPackaging)
   .settings(
     name := "$name;format="lower,hyphen"$-currency-l1",
-    scalacOptions ++= List("-Ymacro-annotations"),
+    scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "$package$.l1",
     resolvers += Resolver.mavenLocal,
@@ -70,12 +70,12 @@ lazy val currencyL0 = (project in file("modules/l0"))
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
-  $if(include_data_l1.truthy) $
+  $if(include_data_l1.truthy)$
   .dependsOn(shared)
   $endif$
   .settings(
     name := "$name;format="lower,hyphen"$-currency-l0",
-    scalacOptions ++= List("-Ymacro-annotations"),
+    scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "$package$.l0",
     resolvers += Resolver.mavenLocal,
@@ -105,7 +105,7 @@ lazy val dataL1 = (project in file("modules/data_l1"))
   .dependsOn(shared)
   .settings(
     name := "$name;format="lower,hyphen"$-data_l1",
-    scalacOptions ++= List("-Ymacro-annotations"),
+    scalacOptions ++= List("-Ymacro-annotations", "-Yrangepos", "-Wconf:cat=unused:info", "-language:reflectiveCalls"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
     buildInfoPackage := "$package$.data_l1",
     resolvers += Resolver.mavenLocal,
