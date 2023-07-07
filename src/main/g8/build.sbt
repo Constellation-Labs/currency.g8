@@ -17,7 +17,7 @@ ThisBuild / assemblyMergeStrategy := {
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
-  ).aggregate($if(include_data_l1.truthy)$shared, $endif$currencyL0, currencyL1$if(include_data_l1.truthy)$,dataL1$endif$)
+  ).aggregate($if(include_data_l1.truthy)$shared, $endif$currencyL0, currencyL1$if(include_data_l1.truthy)$, dataL1$endif$)
 
 $if(include_data_l1.truthy)$
 lazy val shared = (project in file("modules/shared"))
