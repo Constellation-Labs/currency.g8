@@ -9,11 +9,9 @@ ThisBuild / assemblyMergeStrategy := {
   case "logback.xml"                                       => MergeStrategy.first
   case x if x.contains("io.netty.versions.properties")     => MergeStrategy.discard
   case PathList(xs @ _*) if xs.last == "module-info.class" => MergeStrategy.first
-  case PathList("META-INF", _*) => MergeStrategy.discard
   case x =>
     val oldStrategy = (assembly / assemblyMergeStrategy).value
     oldStrategy(x)
-  case _ => MergeStrategy.first
 }
 
 lazy val root = (project in file(".")).
