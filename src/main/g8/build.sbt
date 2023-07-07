@@ -17,7 +17,7 @@ ThisBuild / assemblyMergeStrategy := {
 lazy val root = (project in file(".")).
   settings(
     name := "$name;format="lower,hyphen"$"
-  ).aggregate(currencyL0, currencyL1 $if(include_data_l1.truthy)$, dataL1, shared$endif$)
+  ).aggregate(currencyL0, currencyL1 $if(include_data_l1.truthy)$, shared, dataL1$endif$)
 
 lazy val currencyL1 = (project in file("modules/l1"))
   .enablePlugins(AshScriptPlugin)
