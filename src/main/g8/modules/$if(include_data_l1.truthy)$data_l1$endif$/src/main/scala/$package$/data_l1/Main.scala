@@ -1,4 +1,4 @@
-package $package$.data-l1
+package $package$.data_l1
 
 import java.util.UUID
 import org.tessellation.BuildInfo
