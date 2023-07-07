@@ -9,6 +9,8 @@ ThisBuild / assemblyMergeStrategy := {
   case "logback.xml"                                       => MergeStrategy.first
   case x if x.contains("io.netty.versions.properties")     => MergeStrategy.discard
   case PathList(xs @ _*) if xs.last == "module-info.class" => MergeStrategy.first
+  case PathList("META-INF", _*) => MergeStrategy.discard
+  case _ => MergeStrategy.first
   case x =>
     val oldStrategy = (assembly / assemblyMergeStrategy).value
     oldStrategy(x)
@@ -98,16 +100,16 @@ lazy val currencyL0 = (project in file("modules/l0"))
   )
 
 $if(include_data_l1.truthy)$
-lazy val dataL1 = (project in file("modules/data-l1"))
+lazy val dataL1 = (project in file("modules/data_l1"))
   .enablePlugins(AshScriptPlugin)
   .enablePlugins(BuildInfoPlugin)
   .enablePlugins(JavaAppPackaging)
   .dependsOn(shared)
   .settings(
-    name := "$name;format="lower,hyphen"$-data-l1",
+    name := "$name;format="lower,hyphen"$-data_l1",
     scalacOptions ++= List("-Ymacro-annotations"),
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
-    buildInfoPackage := "$package$.data-l1",
+    buildInfoPackage := "$package$.data_l1",
     resolvers += Resolver.mavenLocal,
     resolvers += Resolver.githubPackages("abankowski", "http-request-signer"),
     Defaults.itSettings,
