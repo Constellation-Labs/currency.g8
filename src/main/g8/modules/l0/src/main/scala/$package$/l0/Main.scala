@@ -1,6 +1,6 @@
 package $package$.l0
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import org.tessellation.BuildInfo
 import org.tessellation.currency.dataApplication.{BaseDataApplicationL0Service}
 import org.tessellation.currency.l0.CurrencyL0App
