@@ -14,5 +14,13 @@ object Main
       tessellationVersion = TessellationVersion.unsafeFrom(BuildInfo.version),
       metagraphVersion = MetagraphVersion.unsafeFrom(BuildInfo.version)
     ) {
+    /*
+    * To implement a data-l1 layer, you need to override the dataApplication function in CurrencyL1App:
+    * 
+    * override def dataApplication: Option[Resource[IO, BaseDataApplicationL1Service[IO]]]
+    *
+    * By default, this function returns None. If you do not provide an implementation, it will not function as a data layer,
+    * and will instead operate as a normal currency layer.
+    */
 
 }
