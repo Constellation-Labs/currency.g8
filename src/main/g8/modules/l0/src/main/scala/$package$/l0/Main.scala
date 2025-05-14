@@ -1,12 +1,12 @@
 package $package$.l0
 
 import cats.effect.{IO, Resource}
-import org.tessellation.BuildInfo
-import org.tessellation.currency.dataApplication.{BaseDataApplicationL0Service}
-import org.tessellation.currency.l0.CurrencyL0App
-import org.tessellation.schema.cluster.ClusterId
-import org.tessellation.security.SecurityProvider
-import org.tessellation.schema.semver.{MetagraphVersion, TessellationVersion}
+import io.constellationnetwork.BuildInfo
+import io.constellationnetwork.currency.dataApplication.{BaseDataApplicationL0Service}
+import io.constellationnetwork.currency.l0.CurrencyL0App
+import io.constellationnetwork.schema.cluster.ClusterId
+import io.constellationnetwork.security.SecurityProvider
+import io.constellationnetwork.schema.semver.{MetagraphVersion, TessellationVersion}
 
 import java.util.UUID
 
