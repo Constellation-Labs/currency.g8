@@ -36,7 +36,7 @@ lazy val sharedData = (project in file("modules/shared_data"))
       CompilerPlugin.kindProjector,
       CompilerPlugin.betterMonadicFor,
       CompilerPlugin.semanticDB,
-      Libraries.tessellationNodeShared
+      Libraries.tessellationSdk
     )
   )
 $endif$
@@ -56,7 +56,7 @@ lazy val currencyL1 = (project in file("modules/l1"))
       CompilerPlugin.kindProjector,
       CompilerPlugin.betterMonadicFor,
       CompilerPlugin.semanticDB,
-      Libraries.tessellationCurrencyL1
+      Libraries.tessellationSdk
     )
   )
 
@@ -82,7 +82,7 @@ lazy val currencyL0 = (project in file("modules/l0"))
       Libraries.declineRefined,
       Libraries.declineCore,
       Libraries.declineEffect,
-      Libraries.tessellationCurrencyL0
+      Libraries.tessellationSdk
     )
   )
 
@@ -104,7 +104,7 @@ lazy val dataL1 = (project in file("modules/data_l1"))
       CompilerPlugin.kindProjector,
       CompilerPlugin.betterMonadicFor,
       CompilerPlugin.semanticDB,
-      Libraries.tessellationCurrencyL1
+      Libraries.tessellationSdk
     )
   )
 $endif$

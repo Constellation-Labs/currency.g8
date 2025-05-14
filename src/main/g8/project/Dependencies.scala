@@ -6,16 +6,14 @@ object Dependencies {
     val tessellation = "$tessellation_version$"
     val decline = "2.4.1"
   }
-  def tessellation(artifact: String): ModuleID = "org.constellation" %% s"tessellation-\$artifact" % V.tessellation
+  def tessellation(artifact: String): ModuleID = "io.constellationnetwork" %% s"tessellation-\$artifact" % V.tessellation
 
   def decline(artifact: String = ""): ModuleID =
     "com.monovore" %% {
       if (artifact.isEmpty) "decline" else s"decline-\$artifact"
     } % V.decline
   object Libraries {
-    val tessellationNodeShared = tessellation("node-shared")
-    val tessellationCurrencyL0 = tessellation("currency-l0")
-    val tessellationCurrencyL1 = tessellation("currency-l1")
+    val tessellationSdk = tessellation("sdk")
     val declineCore = decline()
     val declineEffect = decline("effect")
     val declineRefined = decline("refined")
